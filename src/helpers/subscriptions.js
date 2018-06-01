@@ -1,5 +1,4 @@
 // @flow
-/* eslint-disable no-undef */
 
 import type { Subscription } from '../types'
 
@@ -13,6 +12,7 @@ export default class Subscriptions {
   }
 
   unsubscribe = (subscription: Subscription) => {
-    this.subscriptions = this.subscriptions.filter(subscriber => subscriber !== subscription)
+    this.subscriptions = this.subscriptions
+      .filter(subscriber => subscriber !== subscription)
   }
 }

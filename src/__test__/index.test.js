@@ -1,4 +1,6 @@
+/* eslint-disable max-len,no-console */
 /* global store */
+
 import React from 'react'
 import renderer from 'react-test-renderer'
 

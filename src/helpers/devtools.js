@@ -1,6 +1,10 @@
+// @flow
+
+import type { Middleware } from '../types'
+
 let id = 0
 
-export default ({ initialState }, self) => {
+const devToolsMiddleware: Middleware = ({ initialState }, self) => {
   const reduxDevTools = window.devToolsExtension
 
   const instanceID = id
@@ -38,6 +42,9 @@ export default ({ initialState }, self) => {
   })
 
   return (action, ...arg) => {
+    // $FlowFixMe
     devTools.send({ type: action, ...arg }, self.state, {}, instanceID)
   }
 }
+
+export default devToolsMiddleware

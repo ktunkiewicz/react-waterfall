@@ -5,8 +5,9 @@
   "main": "index.js",
   "files": ["index.js", "package.json", "README.md", "dist/"],
   "scripts": {
-    "build": "rollup -c -m && yarn gen-flow",
+    "build": "yarn run lint && rollup -c -m && yarn gen-flow",
     "gen-flow": "cp src/types.js dist/react-waterfall.js.flow",
+    "lint": "eslint src && flow check src",
     "test": "jest"
   },
   "repository": {

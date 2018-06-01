@@ -1,5 +1,4 @@
 // @flow
-/* eslint-disable no-undef */
 
 import { createContext } from 'react'
 
@@ -33,8 +32,9 @@ const createStore: CreateStore = (
   const { getSubscriptions, subscribe, unsubscribe } = new Subscriptions()
 
   const setProvider: SetProvider = self => {
-    const initializedMiddlewares = [...middlewares, ...defaultMiddlewares].map(middleware =>
-      middleware({ initialState, actionsCreators }, self, actions))
+    const initializedMiddlewares = [...middlewares, ...defaultMiddlewares]
+      .map(middleware =>
+        middleware({ initialState, actionsCreators }, self, actions))
 
     provider = {
       getState: () => self.state,
@@ -58,6 +58,7 @@ const createStore: CreateStore = (
       ...r,
       [v]: (...args) => {
         if (!provider) {
+          // eslint-disable-next-line no-console
           console.error('<Provider /> is not initialized yet')
           return
         }

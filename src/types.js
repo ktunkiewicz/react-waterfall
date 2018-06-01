@@ -2,7 +2,7 @@
 /* eslint-disable no-undef */
 
 export type State = { [string]: any }
-type SetState = (state: State, callback: () => void) => void
+type SetState = (state: State, callback?: () => void) => void
 export type CustomSetState = (
   action: string,
   state: State,
@@ -22,7 +22,7 @@ type Config = {
   actionsCreators: Actions,
 }
 
-type Middleware = (
+export type Middleware = (
   {
     initialState: State,
     actionsCreators: Actions,

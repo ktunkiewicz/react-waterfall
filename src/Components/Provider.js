@@ -1,11 +1,11 @@
 // @flow
-/* eslint-disable no-undef */
 
 import React, { Component } from 'react'
 
+import type { Node } from 'react'
 import type { CreateProvider, State } from '../types'
 
-type Props = { children: React$Node, initialState: {} }
+type Props = { children: Node, initialState: {} }
 
 const EnhancedProvider: CreateProvider = (
   setProvider,

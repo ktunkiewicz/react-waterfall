@@ -1,10 +1,11 @@
 // @flow
-/* eslint-disable no-undef */
 
 import { PureComponent } from 'react'
 
+import type { Node } from 'react'
+
 type Props = {
-  renderComponent: ({}) => React$Node,
+  renderComponent: ({}) => Node,
 }
 
 export default class Prevent extends PureComponent<Props> {
