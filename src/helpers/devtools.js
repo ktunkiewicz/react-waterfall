@@ -4,18 +4,15 @@ import type { Middleware } from '../types'
 
 let id = 0
 
-const devToolsMiddleware: Middleware = ({ initialState }, self) => {
+const devToolsMiddleware: Middleware = ({ initialState }, self, actions) => {
   const reduxDevTools = window.devToolsExtension
 
   const instanceID = id
   id += 1
 
   const name = `react-waterfall - ${instanceID}`
-  const features = {
-    jump: true,
-  }
 
-  const devTools = reduxDevTools.connect({ name, features })
+  const devTools = reduxDevTools.connect({ name, actionCreators: actions })
 
   devTools.subscribe(data => {
     switch (data.type) {
@@ -36,6 +33,10 @@ const devToolsMiddleware: Middleware = ({ initialState }, self) => {
             break
         }
         break
+      case 'ACTION':
+        // eslint-disable-next-line no-eval
+        eval(data.payload);
+        break;
       default:
         break
     }
