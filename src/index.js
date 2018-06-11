@@ -67,7 +67,7 @@ const createStore: CreateStore = (
 
         if (typeof result === 'object') {
           return result.then
-            ? result.then(res => setState(v, res, ...args))
+            ? result
             : setState(v, result, ...args)
         }
       },
