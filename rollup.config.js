@@ -26,7 +26,6 @@ export default [
     },
     plugins: [
       babel({ exclude: 'node_modules/**' }),
-      uglify(),
       replace({
         'process.env.NODE_ENV': JSON.stringify('development'),
       }),

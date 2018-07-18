@@ -32,7 +32,10 @@ const createStore: CreateStore = (
 
   const { getSubscriptions, subscribe, unsubscribe } = new Subscriptions()
 
+  let state = null
+
   const setProvider: SetProvider = self => {
+    state = self.state;
     const initializedMiddlewares = [...middlewares, ...defaultMiddlewares].map(middleware =>
       middleware({ initialState, actionsCreators }, self, actions))
 
@@ -41,8 +44,6 @@ const createStore: CreateStore = (
       initializedMiddlewares,
     }
   }
-
-  let state = initialState
 
   const setState: CustomSetState = (action, result, ...args) => {
     state = { ...state, ...result }

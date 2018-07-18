@@ -111,3 +111,24 @@ test('async actions', async () => {
   const instance = tree.root.findByType(Stars).children[0]
   expect(typeof instance.props.stars).toBe('number')
 })
+
+test('provider initialized with initialState prop', () => {
+  const { Provider, connect, actions } = store
+
+  const Count = connect(({ count }) => ({ count }))(({ count }) => count)
+
+  const App = () => (
+    <Provider initialState={{ count: 2 }}>
+      <Count />
+    </Provider>
+  )
+  const tree = renderer.create(<App />)
+
+  const firstPass = tree.root.findByType(Count).children[0]
+  expect(firstPass.props.count).toBe(2)
+
+  actions.increment()
+
+  const secondPass = tree.root.findByType(Count).children[0]
+  expect(secondPass.props.count).toBe(3)
+})
