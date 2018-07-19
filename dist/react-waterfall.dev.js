@@ -270,29 +270,20 @@ var EnhancedProvider = function EnhancedProvider(setProvider, Provider, config, 
       }, {
         key: "updateState",
         value: function updateState(action, result) {
-          var _this4 = this;
-
           for (var _len3 = arguments.length, args = new Array(_len3 > 2 ? _len3 - 2 : 0), _key3 = 2; _key3 < _len3; _key3++) {
             args[_key3 - 2] = arguments[_key3];
           }
 
           var newState = _objectSpread({}, this.state, result);
 
-          return new Promise(function (resolve) {
-            subscriptions.getSubscriptions().forEach(function (fn) {
-              return fn.apply(void 0, [action, result].concat(args));
-            });
-
-            _this4.setInternalState(newState);
-
-            _this4.setState(newState, function () {
-              _this4.initializedMiddlewares.forEach(function (m) {
-                return m.apply(void 0, [action].concat(args));
-              });
-
-              resolve();
-            });
+          subscriptions.getSubscriptions().forEach(function (fn) {
+            return fn.apply(void 0, [action, result].concat(args));
           });
+          this.setInternalState(newState);
+          this.initializedMiddlewares.forEach(function (m) {
+            return m.apply(void 0, [action, newState].concat(args));
+          });
+          this.setState(newState);
         }
       }, {
         key: "render",
@@ -435,14 +426,14 @@ var devtools = (function (_ref, self) {
         break;
     }
   });
-  return function (action) {
-    for (var _len = arguments.length, arg = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
-      arg[_key - 1] = arguments[_key];
+  return function (action, state) {
+    for (var _len = arguments.length, arg = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
+      arg[_key - 2] = arguments[_key];
     }
 
     devTools.send(_objectSpread({
       type: action
-    }, arg), self.state, {}, instanceID);
+    }, arg), state, {}, instanceID);
   };
 });
 

@@ -5,7 +5,6 @@ import Subscriptions from '../src/helpers/subscriptions'
 import EnhancedProvider from '../src/Components/Provider'
 
 export type State = { [string]: any }
-type SetState = (state: State, callback: () => void) => void
 export type CustomSetState = (
   action: string,
   state: State,

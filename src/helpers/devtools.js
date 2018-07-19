@@ -37,7 +37,7 @@ export default ({ initialState }, self) => {
     }
   })
 
-  return (action, ...arg) => {
-    devTools.send({ type: action, ...arg }, self.state, {}, instanceID)
+  return (action, state, ...arg) => {
+    devTools.send({ type: action, ...arg }, state, {}, instanceID)
   }
 }

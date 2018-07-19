@@ -63,10 +63,13 @@ const EnhancedProvider: CreateProvider = (
     }
 
     handleActionResult(actionName, result, ...args) {
-      // empty or non-object response from action does nothing and returns value to caller
-      if (!result || typeof result !== 'object') return result
+      // empty or non-object response from action does nothing to state
+      if (!result || typeof result !== 'object') return Promise.resolve(result)
       // object, but not promise, response from actions means the object is a new partial state
-      if (!result.then) this.updateState(actionName, result, ...args)
+      if (!result.then) {
+        this.updateState(actionName, result, ...args)
+        return Promise.resolve(result)
+      }
       // promise response from action must be handled to see what it returns
       if (result.then) {
         result.then(promiseResult => this.handleActionResult(actionName, promiseResult, ...args))
@@ -76,14 +79,10 @@ const EnhancedProvider: CreateProvider = (
 
     updateState(action, result, ...args) {
       const newState = { ...this.state, ...result }
-      return new Promise(resolve => {
-        subscriptions.getSubscriptions().forEach(fn => fn(action, result, ...args))
-        this.setInternalState(newState)
-        this.setState(newState, () => {
-          this.initializedMiddlewares.forEach(m => m(action, ...args))
-          resolve()
-        })
-      })
+      subscriptions.getSubscriptions().forEach(fn => fn(action, result, ...args))
+      this.setInternalState(newState)
+      this.initializedMiddlewares.forEach(m => m(action, newState, ...args))
+      this.setState(newState)
     }
 
     render() {
