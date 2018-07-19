@@ -5,6 +5,20 @@ function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'defau
 var React = require('react');
 var React__default = _interopDefault(React);
 
+function _typeof(obj) {
+  if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") {
+    _typeof = function (obj) {
+      return typeof obj;
+    };
+  } else {
+    _typeof = function (obj) {
+      return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
+    };
+  }
+
+  return _typeof(obj);
+}
+
 function _classCallCheck(instance, Constructor) {
   if (!(instance instanceof Constructor)) {
     throw new TypeError("Cannot call a class as a function");
@@ -168,7 +182,7 @@ function _nonIterableSpread() {
   throw new TypeError("Invalid attempt to spread non-iterable instance");
 }
 
-var EnhancedProvider = function EnhancedProvider(setProvider, Provider, initialState) {
+var EnhancedProvider = function EnhancedProvider(setProvider, Provider, config, subscriptions, middlewares) {
   return (
     /*#__PURE__*/
     function (_Component) {
@@ -178,12 +192,109 @@ var EnhancedProvider = function EnhancedProvider(setProvider, Provider, initialS
         _classCallCheck(this, EnhancedProvider);
 
         _this = _possibleConstructorReturn(this, _getPrototypeOf(EnhancedProvider).call(this));
-        _this.state = props.initialState || initialState;
+
+        _defineProperty(_assertThisInitialized(_assertThisInitialized(_this)), "internalState", {});
+
+        _defineProperty(_assertThisInitialized(_assertThisInitialized(_this)), "initializedMiddlewares", []);
+
+        _this.state = props.initialState || config.initialState;
+
+        _this.setInternalState(_this.state);
+
+        var actionsCreators = props.actionsCreators || config.actionsCreators;
+        _this.state.reactWaterfallActions = _this.buildActions(actionsCreators);
+        _this.initializedMiddlewares = middlewares.map(function (middleware) {
+          return middleware({
+            initialState: _this.getInternalState(),
+            actionsCreators: actionsCreators
+          }, _assertThisInitialized(_assertThisInitialized(_this)), _this.getActions());
+        });
         setProvider(_assertThisInitialized(_assertThisInitialized(_this)));
         return _this;
       }
 
       _createClass(EnhancedProvider, [{
+        key: "getInternalState",
+        value: function getInternalState() {
+          return this.internalState;
+        }
+      }, {
+        key: "setInternalState",
+        value: function setInternalState(state) {
+          this.internalState = state;
+        }
+      }, {
+        key: "getActions",
+        value: function getActions() {
+          var reactWaterfallActions = this.state.reactWaterfallActions;
+          return reactWaterfallActions;
+        }
+      }, {
+        key: "buildActions",
+        value: function buildActions(actionsCreators) {
+          var _this2 = this;
+
+          return Object.keys(actionsCreators).reduce(function (r, actionName) {
+            return _objectSpread({}, r, _defineProperty({}, actionName, function () {
+              for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+                args[_key] = arguments[_key];
+              }
+
+              var result = actionsCreators[actionName].apply(actionsCreators, [_this2.getInternalState(), _this2.getActions()].concat(args));
+              return _this2.handleActionResult.apply(_this2, [actionName, result].concat(args));
+            }));
+          }, {});
+        }
+      }, {
+        key: "handleActionResult",
+        value: function handleActionResult(actionName, result) {
+          var _this3 = this;
+
+          for (var _len2 = arguments.length, args = new Array(_len2 > 2 ? _len2 - 2 : 0), _key2 = 2; _key2 < _len2; _key2++) {
+            args[_key2 - 2] = arguments[_key2];
+          }
+
+          // empty or non-object response from action does nothing and returns value to caller
+          if (!result || _typeof(result) !== 'object') return result; // object, but not promise, response from actions means the object is a new partial state
+
+          if (!result.then) this.updateState.apply(this, [actionName, result].concat(args)); // promise response from action must be handled to see what it returns
+
+          if (result.then) {
+            result.then(function (promiseResult) {
+              return _this3.handleActionResult.apply(_this3, [actionName, promiseResult].concat(args));
+            });
+          }
+
+          return result;
+        }
+      }, {
+        key: "updateState",
+        value: function updateState(action, result) {
+          var _this4 = this;
+
+          for (var _len3 = arguments.length, args = new Array(_len3 > 2 ? _len3 - 2 : 0), _key3 = 2; _key3 < _len3; _key3++) {
+            args[_key3 - 2] = arguments[_key3];
+          }
+
+          var newState = _objectSpread({}, this.state, result);
+
+          return new Promise(function (resolve) {
+            subscriptions.getSubscriptions().forEach(function (fn) {
+              return fn.apply(void 0, [action, result].concat(args));
+            });
+
+            _this4.setInternalState(newState);
+
+            _this4.setState(newState, function () {
+              _this4.initializedMiddlewares.forEach(function (m) {
+                return m.apply(void 0, [action].concat(args));
+              });
+
+              resolve();
+            });
+          });
+        }
+      }, {
         key: "render",
         value: function render() {
           return React__default.createElement(Provider, {
@@ -232,8 +343,20 @@ var connect = function connect(Consumer) {
       };
 
       var ConnectedComponent = function ConnectedComponent(props) {
-        return React.createElement(Consumer, null, function (state) {
-          var filteredState = mapStateToProps(state || {});
+        return React.createElement(Consumer, null, function (stateAndActions) {
+          if (!stateAndActions || !stateAndActions.reactWaterfallActions) {
+            var componentName = // $FlowFixMe
+            WrappedComponent.prototype && WrappedComponent.prototype.constructor && WrappedComponent.prototype.constructor.name || null;
+            var componentHint = typeof componentName === 'string' ? " (".concat(componentName, ")") : ''; // eslint-disable-next-line no-console,max-len
+
+            console.error("Connected component".concat(componentHint, " must be wrapped with ", '<Provider />'));
+            return;
+          }
+
+          var reactWaterfallActions = stateAndActions.reactWaterfallActions,
+              state = _objectWithoutProperties(stateAndActions, ["reactWaterfallActions"]);
+
+          var filteredState = mapStateToProps(state || {}, reactWaterfallActions);
           return React.createElement(Prevent, _extends({
             renderComponent: renderComponent
           }, props, filteredState));
@@ -325,85 +448,45 @@ var devtools = (function (_ref, self) {
 
 var defaultMiddlewares = typeof window !== 'undefined' && window.devToolsExtension ? [devtools] : [];
 
-var createStore = function createStore(_ref) {
-  var initialState = _ref.initialState,
-      _ref$actionsCreators = _ref.actionsCreators,
-      actionsCreators = _ref$actionsCreators === void 0 ? {} : _ref$actionsCreators;
-  var middlewares = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
-  var provider;
-  var context = React.createContext();
+var Store =
+/*#__PURE__*/
+function () {
+  function Store() {
+    var _this = this;
 
-  var _ref2 = new Subscriptions(),
-      getSubscriptions = _ref2.getSubscriptions,
-      subscribe = _ref2.subscribe,
-      unsubscribe = _ref2.unsubscribe;
+    _classCallCheck(this, Store);
 
-  var state = null;
+    _defineProperty(this, "subscriptions", new Subscriptions());
 
-  var setProvider = function setProvider(self) {
-    state = self.state;
+    _defineProperty(this, "provider", null);
 
-    var initializedMiddlewares = _toConsumableArray(middlewares).concat(defaultMiddlewares).map(function (middleware) {
-      return middleware({
-        initialState: initialState,
-        actionsCreators: actionsCreators
-      }, self, actions);
+    _defineProperty(this, "setProvider", function (self) {
+      _this.provider = self;
     });
+  }
 
-    provider = {
-      setState: function setState(state, callback) {
-        return self.setState(state, callback);
-      },
-      initializedMiddlewares: initializedMiddlewares
-    };
-  };
-
-  var setState = function setState(action, result) {
-    for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
-      args[_key - 2] = arguments[_key];
+  _createClass(Store, [{
+    key: "create",
+    value: function create(config, middlewares) {
+      var context = React.createContext();
+      var Provider = EnhancedProvider(this.setProvider, context.Provider, config, this.subscriptions, _toConsumableArray(middlewares).concat(defaultMiddlewares));
+      var connect$$1 = connect(context.Consumer, this);
+      return {
+        Provider: Provider,
+        connect: connect$$1,
+        subscribe: this.subscriptions.subscribe,
+        unsubscribe: this.subscriptions.unsubscribe
+      };
     }
+  }]);
 
-    state = _objectSpread({}, state, result);
-    return new Promise(function (resolve) {
-      var subscriptions = getSubscriptions();
-      subscriptions.forEach(function (fn) {
-        return fn.apply(void 0, [action, result].concat(args));
-      });
-      provider.setState(state, function () {
-        provider.initializedMiddlewares.forEach(function (m) {
-          return m.apply(void 0, [action].concat(args));
-        });
-        resolve();
-      });
-    });
-  };
+  return Store;
+}();
 
-  var actions = Object.keys(actionsCreators).reduce(function (r, v) {
-    return _objectSpread({}, r, _defineProperty({}, v, function () {
-      for (var _len2 = arguments.length, args = new Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
-        args[_key2] = arguments[_key2];
-      }
-
-      if (!provider) {
-        console.error('<Provider /> is not initialized yet');
-        return;
-      }
-
-      var result = actionsCreators[v].apply(actionsCreators, [state, actions].concat(args));
-      return result.then ? result.then(function (result) {
-        return setState.apply(void 0, [v, result].concat(args));
-      }) : setState.apply(void 0, [v, result].concat(args));
-    }));
-  }, {});
-  var Provider = EnhancedProvider(setProvider, context.Provider, initialState);
-  var connect$$1 = connect(context.Consumer);
-  return {
-    Provider: Provider,
-    connect: connect$$1,
-    actions: actions,
-    subscribe: subscribe,
-    unsubscribe: unsubscribe
-  };
+var createStore = function createStore(config) {
+  var middlewares = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
+  var store = new Store();
+  return store.create(config, middlewares);
 };
 
 module.exports = createStore;

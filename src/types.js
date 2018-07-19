@@ -1,18 +1,15 @@
 // @flow
 /* eslint-disable no-undef */
 
+import Subscriptions from '../src/helpers/subscriptions'
+import EnhancedProvider from '../src/Components/Provider'
+
 export type State = { [string]: any }
-type SetState = (state: State, callback: () => void) => void
 export type CustomSetState = (
   action: string,
   state: State,
   args: {},
 ) => Promise<void>
-
-type Self = {
-  state: State,
-  setState: SetState,
-}
 
 type Action = (State, {}) => any
 type Actions = { [string]: Action }
@@ -27,16 +24,11 @@ type Middleware = (
     initialState: State,
     actionsCreators: Actions,
   },
-  self: Self,
+  self: EnhancedProvider,
   actions: Actions,
 ) => (action: string, arg: string) => void
 
-type InitializedMiddlewares = (action: string, args: any) => void
-
-export type ProviderType = {
-  setState: SetState,
-  initializedMiddlewares: InitializedMiddlewares[],
-}
+export type ProviderType = EnhancedProvider
 
 type Consumer = React$ComponentType<{
   children: (state: State | void) => React$Node,
@@ -47,22 +39,23 @@ export type Context = {
   Provider: React$ComponentType<*>,
 }
 
-type MapStateToProps = (state: State) => State
+type MapStateToProps = (state: State, actions: Actions) => State
 
 type Connect = (
   mapStateToProps: MapStateToProps,
 ) => (WrappedComponent: React$ComponentType<{}>) => React$ComponentType<{}>
 
-export type CreateConnect = Consumer => Connect
-
-export type SetProvider = any => any
+export type CreateConnect = (Consumer, EnhancedProvider) => Connect
 
 type Provider = React$ComponentType<*>
 
+export type SetProvider = EnhancedProvider => void
 export type CreateProvider = (
   setProvider: SetProvider,
   Provider: Provider,
-  initialState: State,
+  config: Config,
+  subscriptions: Subscriptions,
+  middlewares: Middleware[],
 ) => React$ComponentType<*>
 
 export type Subscription = (action: string, state: State, args: {}) => void
@@ -70,7 +63,6 @@ export type Subscription = (action: string, state: State, args: {}) => void
 type Store = {
   Provider: Provider,
   connect: Connect,
-  actions: Actions,
   subscribe: (subscription: Subscription) => void,
   unsubscribe: (subscription: Subscription) => void,
 }

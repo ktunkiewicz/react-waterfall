@@ -10,10 +10,9 @@ import devtools from './helpers/devtools'
 
 import type {
   CreateStore,
-  ProviderType,
-  SetProvider,
-  CustomSetState,
   Context,
+  SetProvider,
+  ProviderType,
 } from './types'
 
 const defaultMiddlewares =
@@ -23,69 +22,37 @@ const defaultMiddlewares =
     ? [devtools]
     : []
 
-const createStore: CreateStore = (
-  { initialState, actionsCreators = {} },
-  middlewares = [],
-) => {
-  let provider: ProviderType
-  const context: Context = createContext()
+class Store {
+  subscriptions = new Subscriptions()
 
-  const { getSubscriptions, subscribe, unsubscribe } = new Subscriptions()
+  provider: ?ProviderType = null
+  setProvider: SetProvider = self => {
+    this.provider = self
+  }
 
-  let state = null
-
-  const setProvider: SetProvider = self => {
-    state = self.state;
-    const initializedMiddlewares = [...middlewares, ...defaultMiddlewares].map(middleware =>
-      middleware({ initialState, actionsCreators }, self, actions))
-
-    provider = {
-      setState: (state, callback) => self.setState(state, callback),
-      initializedMiddlewares,
+  create(config, middlewares) {
+    const context: Context = createContext()
+    const Provider = createProvider(
+      this.setProvider,
+      context.Provider,
+      config,
+      this.subscriptions,
+      [...middlewares, ...defaultMiddlewares],
+    )
+    const connect = createConnect(context.Consumer, this)
+    return {
+      Provider,
+      connect,
+      subscribe: this.subscriptions.subscribe,
+      unsubscribe: this.subscriptions.unsubscribe,
     }
   }
+}
 
-  const setState: CustomSetState = (action, result, ...args) => {
-    state = { ...state, ...result }
-    return new Promise(resolve => {
-      const subscriptions = getSubscriptions()
-      subscriptions.forEach(fn => fn(action, result, ...args))
-      provider.setState(state, () => {
-        provider.initializedMiddlewares.forEach(m => m(action, ...args))
-        resolve()
-      })
-    })
-  }
 
-  const actions = Object.keys(actionsCreators).reduce(
-    (r, v) => ({
-      ...r,
-      [v]: (...args) => {
-        if (!provider) {
-          console.error('<Provider /> is not initialized yet')
-          return
-        }
-
-        const result = actionsCreators[v](state, actions, ...args)
-
-        return result.then
-          ? result.then(result => setState(v, result, ...args))
-          : setState(v, result, ...args)
-      },
-    }),
-    {},
-  )
-
-  const Provider = createProvider(setProvider, context.Provider, initialState)
-  const connect = createConnect(context.Consumer)
-
-  return {
-    Provider,
-    connect,
-    actions,
-    subscribe,
-    unsubscribe,
-  }
+const createStore: CreateStore = (config, middlewares = []) => {
+  const store = new Store()
+  return store.create(config, middlewares)
 }
 
 export default createStore
