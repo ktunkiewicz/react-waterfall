@@ -254,10 +254,14 @@ var EnhancedProvider = function EnhancedProvider(setProvider, Provider, config, 
             args[_key2 - 2] = arguments[_key2];
           }
 
-          // empty or non-object response from action does nothing and returns value to caller
-          if (!result || _typeof(result) !== 'object') return result; // object, but not promise, response from actions means the object is a new partial state
+          // empty or non-object response from action does nothing to state
+          if (!result || _typeof(result) !== 'object') return Promise.resolve(result); // object, but not promise, response from actions means the object is a new partial state
 
-          if (!result.then) this.updateState.apply(this, [actionName, result].concat(args)); // promise response from action must be handled to see what it returns
+          if (!result.then) {
+            this.updateState.apply(this, [actionName, result].concat(args));
+            return Promise.resolve(result);
+          } // promise response from action must be handled to see what it returns
+
 
           if (result.then) {
             result.then(function (promiseResult) {
