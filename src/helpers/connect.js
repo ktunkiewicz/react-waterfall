@@ -24,7 +24,7 @@ const connect: CreateConnect = Consumer => mapStateToProps => WrappedComponent =
           return
         }
         const { reactWaterfallActions, ...state } = stateAndActions
-        const filteredState = mapStateToProps(state || {}, reactWaterfallActions)
+        const filteredState = mapStateToProps(state || {}, reactWaterfallActions, { ...props })
         return (
           <Prevent
             renderComponent={renderComponent}
