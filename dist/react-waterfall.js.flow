@@ -39,7 +39,7 @@ export type Context = {
   Provider: React$ComponentType<*>,
 }
 
-type MapStateToProps = (state: State, actions: Actions) => State
+type MapStateToProps = (state: State, actions: Actions, originalProps: {}) => State
 
 type Connect = (
   mapStateToProps: MapStateToProps,

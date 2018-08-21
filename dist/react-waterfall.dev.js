@@ -351,7 +351,7 @@ var connect = function connect(Consumer) {
           var reactWaterfallActions = stateAndActions.reactWaterfallActions,
               state = _objectWithoutProperties(stateAndActions, ["reactWaterfallActions"]);
 
-          var filteredState = mapStateToProps(state || {}, reactWaterfallActions);
+          var filteredState = mapStateToProps(state || {}, reactWaterfallActions, _objectSpread({}, props));
           return React.createElement(Prevent, _extends({
             renderComponent: renderComponent
           }, props, filteredState));
