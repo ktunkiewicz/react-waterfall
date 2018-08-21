@@ -15,6 +15,13 @@ import type {
   ProviderType,
 } from './types'
 
+type Store = {
+  context: Context,
+  subscriptions: Subscriptions,
+  provider: ProviderType,
+  setProvider: SetProvider,
+}
+
 const defaultMiddlewares =
   process.env.NODE_ENV === 'development' &&
   typeof window !== 'undefined' &&
@@ -22,37 +29,30 @@ const defaultMiddlewares =
     ? [devtools]
     : []
 
-class Store {
-  subscriptions = new Subscriptions()
-
-  provider: ?ProviderType = null
-  setProvider: SetProvider = self => {
-    this.provider = self
-  }
-
-  create(config, middlewares) {
-    const context: Context = createContext()
-    const Provider = createProvider(
-      this.setProvider,
-      context.Provider,
-      config,
-      this.subscriptions,
-      [...middlewares, ...defaultMiddlewares],
-    )
-    const connect = createConnect(context.Consumer, this)
-    return {
-      Provider,
-      connect,
-      subscribe: this.subscriptions.subscribe,
-      unsubscribe: this.subscriptions.unsubscribe,
-    }
-  }
-}
-
 
 const createStore: CreateStore = (config, middlewares = []) => {
-  const store = new Store()
-  return store.create(config, middlewares)
+  const store: Store = {
+    context: createContext(),
+    subscriptions: new Subscriptions(),
+    provider: null,
+    setProvider: self => {
+      store.provider = self
+    },
+  }
+  const Provider = createProvider(
+    store.setProvider,
+    store.context.Provider,
+    config,
+    store.subscriptions,
+    [...middlewares, ...defaultMiddlewares],
+  )
+  const connect = createConnect(store.context.Consumer, this)
+  return {
+    Provider,
+    connect,
+    subscribe: store.subscriptions.subscribe,
+    unsubscribe: store.subscriptions.unsubscribe,
+  }
 }
 
 export default createStore

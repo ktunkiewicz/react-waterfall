@@ -441,47 +441,27 @@ var devtools = (function (_ref, self) {
   };
 });
 
+var _this = undefined;
 var defaultMiddlewares = typeof window !== 'undefined' && window.devToolsExtension ? [devtools] : [];
-
-var Store =
-/*#__PURE__*/
-function () {
-  function Store() {
-    var _this = this;
-
-    _classCallCheck(this, Store);
-
-    _defineProperty(this, "subscriptions", new Subscriptions());
-
-    _defineProperty(this, "provider", null);
-
-    _defineProperty(this, "setProvider", function (self) {
-      _this.provider = self;
-    });
-  }
-
-  _createClass(Store, [{
-    key: "create",
-    value: function create(config, middlewares) {
-      var context = React.createContext();
-      var Provider = EnhancedProvider(this.setProvider, context.Provider, config, this.subscriptions, _toConsumableArray(middlewares).concat(defaultMiddlewares));
-      var connect$$1 = connect(context.Consumer, this);
-      return {
-        Provider: Provider,
-        connect: connect$$1,
-        subscribe: this.subscriptions.subscribe,
-        unsubscribe: this.subscriptions.unsubscribe
-      };
-    }
-  }]);
-
-  return Store;
-}();
 
 var createStore = function createStore(config) {
   var middlewares = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
-  var store = new Store();
-  return store.create(config, middlewares);
+  var store = {
+    context: React.createContext(),
+    subscriptions: new Subscriptions(),
+    provider: null,
+    setProvider: function setProvider(self) {
+      store.provider = self;
+    }
+  };
+  var Provider = EnhancedProvider(store.setProvider, store.context.Provider, config, store.subscriptions, _toConsumableArray(middlewares).concat(defaultMiddlewares));
+  var connect$$1 = connect(store.context.Consumer, _this);
+  return {
+    Provider: Provider,
+    connect: connect$$1,
+    subscribe: store.subscriptions.subscribe,
+    unsubscribe: store.subscriptions.unsubscribe
+  };
 };
 
 module.exports = createStore;
