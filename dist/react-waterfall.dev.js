@@ -255,7 +255,7 @@ var EnhancedProvider = function EnhancedProvider(setProvider, Provider, config, 
           }
 
           // empty or non-object response from action does nothing to state
-          if (!result || _typeof(result) !== 'object') return Promise.resolve(result); // object, but not promise, response from actions means the object is a new partial state
+          if (!result || _typeof(result) !== 'object') return Promise.resolve(result); // object (but not promise) response from action means the object is a new partial state
 
           if (!result.then) {
             this.updateState.apply(this, [actionName, result].concat(args));
@@ -449,7 +449,6 @@ var createStore = function createStore(config) {
   var store = {
     context: React.createContext(),
     subscriptions: new Subscriptions(),
-    provider: null,
     setProvider: function setProvider(self) {
       store.provider = self;
     }

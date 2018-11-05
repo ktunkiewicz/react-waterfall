@@ -65,7 +65,7 @@ const EnhancedProvider: CreateProvider = (
     handleActionResult(actionName, result, ...args) {
       // empty or non-object response from action does nothing to state
       if (!result || typeof result !== 'object') return Promise.resolve(result)
-      // object, but not promise, response from actions means the object is a new partial state
+      // object (but not promise) response from action means the object is a new partial state
       if (!result.then) {
         this.updateState(actionName, result, ...args)
         return Promise.resolve(result)

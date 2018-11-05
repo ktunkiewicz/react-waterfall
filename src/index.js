@@ -18,7 +18,6 @@ import type {
 type Store = {
   context: Context,
   subscriptions: Subscriptions,
-  provider: ProviderType,
   setProvider: SetProvider,
 }
 
@@ -29,12 +28,10 @@ const defaultMiddlewares =
     ? [devtools]
     : []
 
-
 const createStore: CreateStore = (config, middlewares = []) => {
   const store: Store = {
     context: createContext(),
     subscriptions: new Subscriptions(),
-    provider: null,
     setProvider: self => {
       store.provider = self
     },
